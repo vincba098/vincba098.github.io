@@ -1,13 +1,20 @@
 {
   "background_color": "#000000",
   "dir": "auto",
-  "display": "browser",
+  "display": "standalone",
   "name": "eclectic-dasik-181ad4.netlify",
-  "orientation": "any",
+  "orientation": "landscape",
   "scope": "/",
   "short_name": "Dashboard BBM",
-  "start_url": "/Dashboard-bbm",
+  "start_url": "/index.html",
   "theme_color": "#ffffff",
   "description": "Track penggunaan BBM berdasarkan jarak yang di tempuh.",
-  "lang": "en"
+  "lang": "id",
+  "id": "dashboard-bbm",
+  "categories": [
+    "cars",
+    "navigation",
+    "travel",
+    "utilities"
+  ]
 }
