@@ -1,0 +1,13 @@
+{
+  "background_color": "#000000",
+  "dir": "auto",
+  "display": "browser",
+  "name": "eclectic-dasik-181ad4.netlify",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "Dashboard BBM",
+  "start_url": "/Dashboard-bbm",
+  "theme_color": "#ffffff",
+  "description": "Track penggunaan BBM berdasarkan jarak yang di tempuh.",
+  "lang": "en"
+}
