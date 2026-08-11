@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard BBM Mobil</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --surface-color: #1e1e1e;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --accent-green: #03dac6;
+            --accent-red: #cf6679;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .dashboard-container {
+            background-color: var(--surface-color);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h2 {
+            margin-top: 0;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+
+        .metric {
+            margin: 30px 0;
+        }
+
+        .metric-value {
+            font-size: 3.5rem;
+            font-weight: bold;
+            color: var(--accent-green);
+            margin: 10px 0;
+        }
+
+        .metric-unit {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 40px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:active {
+            opacity: 0.8;
+        }
+
+        .btn-start {
+            background-color: var(--accent-green);
+            color: #000;
+        }
+
+        .btn-stop {
+            background-color: var(--accent-red);
+            color: #fff;
+        }
+        
+        .status {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <h2>Efisiensi: 12 km/L</h2>
+        
+        <div class="metric">
+            <div class="metric-unit">Jarak Tempuh</div>
+            <div class="metric-value" id="distanceDisplay">0.00</div>
+            <div class="metric-unit">Kilometer</div>
+        </div>
+
+        <div class="metric">
+            <div class="metric-unit">Bensin Terpakai</div>
+            <div class="metric-value" id="fuelDisplay" style="color: #bb86fc;">0.00</div>
+            <div class="metric-unit">Liter</div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-start" id="startBtn" onclick="startTrip()">Start Trip</button>
+            <button class="btn-stop" id="stopBtn" onclick="stopTrip()" disabled style="opacity: 0.5;">Stop Trip</button>
+        </div>
+        
+        <div class="status" id="statusText">Mesin mati. Tekan Start untuk memulai pelacakan.</div>
+    </div>
+
+    <script>
+        const EFFICIENCY_KM_PER_LITER = 12.0; // Angka asumsi konsumsi bensin
+        let watchId = null;
+        let lastPosition = null;
+        let totalDistanceKm = 0;
+
+        const distanceDisplay = document.getElementById('distanceDisplay');
+        const fuelDisplay = document.getElementById('fuelDisplay');
+        const statusText = document.getElementById('statusText');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+
+        // Rumus Haversine untuk menghitung jarak antara 2 titik koordinat
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius bumi dalam km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        function updateUI() {
+            distanceDisplay.innerText = totalDistanceKm.toFixed(2);
+            const fuelUsed = totalDistanceKm / EFFICIENCY_KM_PER_LITER;
+            fuelDisplay.innerText = fuelUsed.toFixed(2);
+        }
+
+        function startTrip() {
+            if (!navigator.geolocation) {
+                alert("Browser Anda tidak mendukung fitur Geolocation.");
+                return;
+            }
+
+            // Reset nilai
+            totalDistanceKm = 0;
+            lastPosition = null;
+            updateUI();
+
+            // Ubah state tombol
+            startBtn.disabled = true;
+            startBtn.style.opacity = '0.5';
+            stopBtn.disabled = false;
+            stopBtn.style.opacity = '1';
+            statusText.innerText = "Mencari sinyal GPS dan melacak pergerakan...";
+
+            // Mulai memantau lokasi
+            watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    
+                    statusText.innerText = "Sedang melacak perjalanan...";
+
+                    if (lastPosition) {
+                        const distance = calculateDistance(
+                            lastPosition.latitude, lastPosition.longitude,
+                            latitude, longitude
+                        );
+                        totalDistanceKm += distance;
+                        updateUI();
+                    }
+
+                    lastPosition = { latitude, longitude };
+                },
+                (error) => {
+                    statusText.innerText = "Gagal mendapatkan lokasi. Pastikan GPS aktif.";
+                    console.error(error);
+                },
+                { enableHighAccuracy: true, maximumAge: 0 }
+            );
+        }
+
+        function stopTrip() {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+
+            // Kembalikan state tombol
+            startBtn.disabled = false;
+            startBtn.style.opacity = '1';
+            stopBtn.disabled = true;
+            stopBtn.style.opacity = '0.5';
+            
+            const fuelUsed = (totalDistanceKm / EFFICIENCY_KM_PER_LITER).toFixed(2);
+            statusText.innerText = `Perjalanan selesai. Total jarak: ${totalDistanceKm.toFixed(2)} km, Bensin: ${fuelUsed} L.`;
+        }
+    </script>
+</body>
+</html>
